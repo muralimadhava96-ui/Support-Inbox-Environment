@@ -14,3 +14,5 @@
    - `./create_submission_zip.sh`
 6. If deploying to HF Space, follow:
    - `HF_SPACE_CHECKLIST.md`
+7. Run live validator against deployed URL:
+   - `./validate-submission.sh https://your-space.hf.space`

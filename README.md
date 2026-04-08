@@ -183,6 +183,11 @@ This repository is structured to satisfy OpenEnv multi-mode validation requireme
 - Run pytest only: `python3 -m pytest`
 - Create release zip: `./create_submission_zip.sh`
 
+
+## Live Validator
+
+- Validate deployed Space/runtime: `./validate-submission.sh https://your-space.hf.space`
+
 ## Automation
 
 - Local one-command verification: `./verify_submission.sh`
