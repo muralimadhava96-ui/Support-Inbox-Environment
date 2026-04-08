@@ -147,6 +147,7 @@ Environment-only (`requirements.txt`):
 - `fastapi`
 - `uvicorn`
 - `pydantic`
+- `httpx`
 
 Inference-only (`requirements-inference.txt`):
 
@@ -164,7 +165,8 @@ uvicorn app:app --host 0.0.0.0 --port 7860
 
 ```bash
 pip install -r requirements.txt -r requirements-inference.txt
-export OPENAI_API_KEY=sk-...   # or export HF_TOKEN=...
+export API_KEY=sk-...          # evaluator-injected key
+export API_BASE_URL=https://api.openai.com/v1
 python inference.py --mode local
 python inference.py --mode http
 python inference.py --task medium_billing --mode local
@@ -175,7 +177,8 @@ Optional inference environment variables:
 - `API_BASE_URL` (default: `https://api.openai.com/v1`)
 - `MODEL_NAME` (default: `gpt-4o-mini`)
 - `ENV_BASE_URL` (default: `http://localhost:7860`)
-- `HF_TOKEN` (or `OPENAI_API_KEY`) for remote LLM calls in `inference.py`
+- `API_KEY` (primary, evaluator-injected)
+- `OPENAI_API_KEY` or `HF_TOKEN` (fallback only)
 
 ## Strict Inference Logs
 

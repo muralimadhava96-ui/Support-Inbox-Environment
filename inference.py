@@ -17,7 +17,8 @@ except Exception:  # pragma: no cover - dependency may be intentionally absent i
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN", "")
+# Evaluator-provided credentials must take precedence for proxy observability.
+API_KEY = os.getenv("API_KEY") or os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN", "")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 TEMPERATURE = 0.2
 
