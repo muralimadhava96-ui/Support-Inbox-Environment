@@ -19,7 +19,10 @@
 
 ## Push Repository
 
-1. Push the entire project (including `Dockerfile`, `openenv.yaml`, `pyproject.toml`, `uv.lock`).
+1. Push the entire project to the Space remote (including `Dockerfile`, `openenv.yaml`, `pyproject.toml`, `uv.lock`):
+   - `export HF_TOKEN=hf_xxx`
+   - `export HF_SPACE_ID=Madhava96/support-inbox-env`
+   - `./sync-hf-space.sh`
 2. Confirm build logs show container start with `uvicorn app:app` on port `7860`.
 
 ## Runtime Checks (After Deploy)
