@@ -172,9 +172,9 @@ python inference.py --mode http
 python inference.py --task medium_billing --mode local
 ```
 
-Optional inference environment variables:
+Inference environment variables:
 
-- `API_BASE_URL` (default: `https://api.openai.com/v1`)
+- `API_BASE_URL` (required for evaluator proxy calls)
 - `MODEL_NAME` (default: `gpt-4o-mini`)
 - `ENV_BASE_URL` (default: `http://localhost:7860`)
 - `API_KEY` (required for evaluator proxy calls)

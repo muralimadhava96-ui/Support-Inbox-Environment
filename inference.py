@@ -15,7 +15,7 @@ except Exception:  # pragma: no cover - dependency may be intentionally absent i
     OpenAI = None
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 API_KEY = os.getenv("API_KEY")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
