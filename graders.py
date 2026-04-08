@@ -7,51 +7,39 @@ SCORE_MIN_OPEN = 0.001
 SCORE_MAX_OPEN = 0.999
 
 
-def _to_open_interval(raw_score: float) -> float:
-    """Map raw score to a strict open interval required by Phase-2 validator."""
-    if raw_score <= 0.0:
-        return SCORE_MIN_OPEN
-    if raw_score >= 1.0:
-        return SCORE_MAX_OPEN
-    return raw_score
+def _clamp_score(score: float) -> float:
+    """Ensure score is strictly between (0, 1)"""
+    return max(0.01, min(0.99, float(score)))
 
 
-def grade(state: dict[str, Any]) -> float:
+def grade_with_breakdown(state: dict) -> dict:
     """
-    Canonical score in strict open interval (0.0, 1.0).
-
-    Weights:
-      +0.30 classified correctly
-      +0.20 used KB
-      +0.20 responded
-      +0.30 terminal action was correct
+    Compute reward score with breakdown.
+    Ensures final score is strictly within (0, 1).
     """
-    score = 0.0
 
-    if state.get("classified_correctly"):
-        score += 0.30
+    classified = int(state.get("classified_correctly", False))
+    used_kb = int(state.get("used_kb", False))
+    responded = int(state.get("responded", False))
+    resolved = int(state.get("resolved_correctly", False))
 
-    if state.get("used_kb"):
-        score += 0.20
+    # weighted scoring
+    score = (
+        0.3 * classified +
+        0.2 * used_kb +
+        0.25 * responded +
+        0.25 * resolved
+    )
 
-    if state.get("responded"):
-        score += 0.20
+    # clamp to avoid 0.0 or 1.0
+    score = _clamp_score(score)
 
-    if state.get("resolved_correctly"):
-        score += 0.30
-
-    bounded = min(max(score, 0.0), 1.0)
-    return round(_to_open_interval(bounded), 4)
-
-
-def grade_with_breakdown(state: dict[str, Any]) -> dict[str, Any]:
-    """Score plus criterion-level breakdown."""
-    breakdown = {
-        "classification": 0.30 if state.get("classified_correctly") else 0.0,
-        "kb_usage": 0.20 if state.get("used_kb") else 0.0,
-        "response": 0.20 if state.get("responded") else 0.0,
-        "resolution": 0.30 if state.get("resolved_correctly") else 0.0,
+    return {
+        "score": score,
+        "breakdown": {
+            "classified": 0.3 * classified,
+            "used_kb": 0.2 * used_kb,
+            "responded": 0.25 * responded,
+            "resolved": 0.25 * resolved,
+        }
     }
-    raw_total = min(max(sum(breakdown.values()), 0.0), 1.0)
-    total = round(_to_open_interval(raw_total), 4)
-    return {"total": total, "breakdown": breakdown}
