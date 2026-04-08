@@ -82,6 +82,7 @@ Penalties:
 
 - `-0.15` incorrect action
 - `-0.05` redundant action
+- `-0.25` resolving before sending a customer response
 
 Bounds and optimality:
 
