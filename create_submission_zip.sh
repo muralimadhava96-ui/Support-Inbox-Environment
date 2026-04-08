@@ -17,7 +17,7 @@ zip -r "$OUT" \
   Dockerfile inference.py README.md \
   pyproject.toml uv.lock \
   server tests pytest.ini .github \
-  HF_SPACE_CHECKLIST.md SUBMISSION_CHECKLIST.md \
+  HF_SPACE_CHECKLIST.md SUBMISSION_CHECKLIST.md REPO_STRUCTURE.md \
   verify_submission.sh create_submission_zip.sh .env.example .gitignore \
   -x "*/__pycache__/*" "*.pyc" "*.pyo" "*.DS_Store"
 
