@@ -15,13 +15,23 @@ except Exception:  # pragma: no cover - dependency may be intentionally absent i
     OpenAI = None
 
 
-API_BASE_URL = os.getenv("API_BASE_URL")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.getenv("API_KEY")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 TEMPERATURE = 0.2
 
-LLM_CLIENT = OpenAI(api_key=API_KEY, base_url=API_BASE_URL) if (API_KEY and API_BASE_URL and OpenAI is not None) else None
+
+def _build_llm_client():
+    if OpenAI is None:
+        return None
+    try:
+        api_key = os.environ["API_KEY"]
+        api_base = os.environ["API_BASE_URL"]
+    except KeyError:
+        return None
+    return OpenAI(api_key=api_key, base_url=api_base)
+
+
+LLM_CLIENT = _build_llm_client()
 
 POLICY_KEYWORDS = {
     "ban",
