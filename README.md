@@ -1,3 +1,12 @@
+---
+title: Support Inbox Environment
+emoji: 📬
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # Support Inbox Environment
 
 [![OpenEnv Validate](https://img.shields.io/badge/OpenEnv-validate%20passing-brightgreen)](https://github.com/meta-pytorch/OpenEnv)
