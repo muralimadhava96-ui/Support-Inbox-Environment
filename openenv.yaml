@@ -1,0 +1,21 @@
+name: support-inbox-env
+description: >
+  A customer support ticket-resolution OpenEnv environment.
+  The agent must classify tickets, search the knowledge base,
+  respond to customers, and resolve or escalate correctly.
+version: "1.0.0"
+
+tasks:
+  - easy_faq
+  - medium_billing
+  - hard_escalation
+
+reward:
+  min: -1.0
+  max: 1.0
+  shaped: true
+
+endpoints:
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
