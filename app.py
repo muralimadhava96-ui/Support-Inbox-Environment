@@ -1,10 +1,12 @@
 """FastAPI app for Support Inbox Environment."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from env import SupportEnv
 from graders import grade_with_breakdown
@@ -16,6 +18,7 @@ env_registry: dict[str, SupportEnv] = {}
 ENV_NAME = "support-inbox-env"
 ENV_DESCRIPTION = "Customer support ticket-resolution environment."
 ENV_VERSION = "1.0.0"
+_UI_TEMPLATE = Path(__file__).parent / "templates" / "index.html"
 
 
 @asynccontextmanager
@@ -49,6 +52,11 @@ async def root():
         "tasks": list(TASKS.keys()),
         "endpoints": ["/reset", "/step", "/state"],
     }
+
+
+@app.get("/ui", response_class=HTMLResponse)
+async def ui():
+    return _UI_TEMPLATE.read_text(encoding="utf-8")
 
 
 @app.get("/health")

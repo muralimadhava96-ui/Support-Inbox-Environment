@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support Inbox Environment UI</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #14213d;
+      --muted: #4b5563;
+      --line: #dbe4f0;
+      --accent: #0b6bcb;
+      --accent-2: #0a4f95;
+      --ok: #087f5b;
+      --warn: #b45309;
+      --err: #b91c1c;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: radial-gradient(1200px 700px at 0% 0%, #e8f2ff 0%, var(--bg) 45%);
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px 24px;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(10, 27, 56, 0.06);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 14px 16px;
+      font-size: 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fbfdff 0%, #f7fbff 100%);
+    }
+
+    .section { padding: 14px 16px; }
+    .grid { display: grid; gap: 10px; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+
+    input, select, textarea, button {
+      font: inherit;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 9px 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+    .btn-subtle:hover { background: #f8fbff; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .ticket, .history, .log {
+      background: #f8fbff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .ticket { min-height: 64px; }
+    .history { min-height: 96px; }
+    .log {
+      min-height: 320px;
+      max-height: 380px;
+      overflow: auto;
+      font-family: var(--mono);
+      white-space: pre-wrap;
+      line-height: 1.4;
+      font-size: 12px;
+      background: #0b1320;
+      color: #d5e8ff;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .pill {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #fff;
+      font-size: 12px;
+    }
+    .pill strong { display: block; margin-bottom: 2px; font-size: 11px; color: var(--muted); font-weight: 600; }
+
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .err { color: var(--err); }
+
+    @media (max-width: 920px) {
+      .wrap { grid-template-columns: 1fr; }
+      .actions { grid-template-columns: repeat(3, 1fr); }
+      .meta { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card">
+      <h2>Support Inbox Controller</h2>
+      <div class="section grid">
+        <div class="grid grid-2">
+          <div>
+            <label for="task">Task</label>
+            <select id="task">
+              <option value="easy_faq">easy_faq</option>
+              <option value="medium_billing">medium_billing</option>
+              <option value="hard_escalation">hard_escalation</option>
+            </select>
+          </div>
+          <div>
+            <label for="sessionId">Session ID</label>
+            <input id="sessionId" placeholder="ui-session-default" />
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn-primary" id="resetBtn">Reset</button>
+          <button class="btn-subtle" id="stateBtn">Refresh State</button>
+          <button class="btn-subtle" id="clearLogBtn">Clear Log</button>
+        </div>
+
+        <div>
+          <label for="content">Action Content (optional)</label>
+          <textarea id="content" placeholder="For classify: faq | billing | policy&#10;For respond: write customer message"></textarea>
+        </div>
+
+        <div class="actions">
+          <button data-action="classify">classify</button>
+          <button data-action="search_kb">search_kb</button>
+          <button data-action="respond">respond</button>
+          <button data-action="resolve">resolve</button>
+          <button data-action="escalate">escalate</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Runtime Snapshot</h2>
+      <div class="section grid">
+        <div class="meta">
+          <div class="pill"><strong>Reward</strong><span id="rewardValue">0.00</span></div>
+          <div class="pill"><strong>Done</strong><span id="doneValue">false</span></div>
+          <div class="pill"><strong>Status</strong><span id="statusValue">-</span></div>
+          <div class="pill"><strong>Task</strong><span id="taskValue">-</span></div>
+        </div>
+
+        <div>
+          <label>Customer Message</label>
+          <div class="ticket" id="ticketBox">Run reset to load a ticket.</div>
+        </div>
+
+        <div>
+          <label>History</label>
+          <div class="history" id="historyBox">[]</div>
+        </div>
+
+        <div>
+          <label>Logs</label>
+          <div class="log" id="logBox"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const api = {
+      reset: "/reset",
+      step: "/step",
+      state: "/state"
+    };
+
+    const taskEl = document.getElementById("task");
+    const sessionEl = document.getElementById("sessionId");
+    const contentEl = document.getElementById("content");
+    const rewardEl = document.getElementById("rewardValue");
+    const doneEl = document.getElementById("doneValue");
+    const statusEl = document.getElementById("statusValue");
+    const taskValueEl = document.getElementById("taskValue");
+    const ticketEl = document.getElementById("ticketBox");
+    const historyEl = document.getElementById("historyBox");
+    const logEl = document.getElementById("logBox");
+
+    sessionEl.value = `ui-${Math.random().toString(36).slice(2, 9)}`;
+
+    function sessionId() {
+      const raw = sessionEl.value.trim();
+      return raw || "ui-default";
+    }
+
+    function log(line, kind = "") {
+      const ts = new Date().toLocaleTimeString();
+      const prefix = kind ? `[${kind}]` : "[INFO]";
+      logEl.textContent += `${ts} ${prefix} ${line}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setSnapshot(payload) {
+      if (!payload) return;
+      if (typeof payload.reward === "number") rewardEl.textContent = payload.reward.toFixed(2);
+      if (typeof payload.done === "boolean") doneEl.textContent = String(payload.done);
+
+      const obs = payload.observation || payload;
+      if (obs.status) statusEl.textContent = obs.status;
+      if (obs.customer_message) ticketEl.textContent = obs.customer_message;
+      if (Array.isArray(obs.history)) {
+        historyEl.textContent = obs.history.length ? obs.history.join("\n") : "[]";
+      }
+    }
+
+    async function readJson(resp) {
+      const text = await resp.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        throw new Error(`Non-JSON response (${resp.status}): ${text.slice(0, 200)}`);
+      }
+    }
+
+    async function callReset() {
+      taskValueEl.textContent = taskEl.value;
+      const url = `${api.reset}?task=${encodeURIComponent(taskEl.value)}&session_id=${encodeURIComponent(sessionId())}`;
+      const resp = await fetch(url, { method: "POST" });
+      const data = await readJson(resp);
+      if (!resp.ok) throw new Error(data.detail || `Reset failed (${resp.status})`);
+      setSnapshot(data);
+      log(`reset ok | task=${taskEl.value} reward=${data.reward} done=${data.done}`, "OK");
+    }
+
+    async function callStep(actionType) {
+      const contentRaw = contentEl.value.trim();
+      const body = {
+        action_type: actionType,
+        content: contentRaw.length ? contentRaw : null
+      };
+      const url = `${api.step}?session_id=${encodeURIComponent(sessionId())}`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await readJson(resp);
+      if (!resp.ok) throw new Error(data.detail || `Step failed (${resp.status})`);
+      setSnapshot(data);
+      log(`step=${actionType} reward=${data.reward} done=${data.done}`, data.done ? "DONE" : "OK");
+      if (data.done) {
+        doneEl.className = "ok";
+      } else {
+        doneEl.className = "";
+      }
+    }
+
+    async function refreshState() {
+      const url = `${api.state}?session_id=${encodeURIComponent(sessionId())}`;
+      const resp = await fetch(url);
+      const data = await readJson(resp);
+      if (!resp.ok) throw new Error(data.detail || `State failed (${resp.status})`);
+      setSnapshot(data);
+      log("state refreshed", "OK");
+    }
+
+    document.getElementById("resetBtn").addEventListener("click", async () => {
+      try {
+        await callReset();
+      } catch (err) {
+        log(String(err.message || err), "ERR");
+      }
+    });
+
+    document.getElementById("stateBtn").addEventListener("click", async () => {
+      try {
+        await refreshState();
+      } catch (err) {
+        log(String(err.message || err), "ERR");
+      }
+    });
+
+    document.getElementById("clearLogBtn").addEventListener("click", () => {
+      logEl.textContent = "";
+    });
+
+    document.querySelectorAll("[data-action]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        try {
+          await callStep(btn.dataset.action);
+        } catch (err) {
+          log(String(err.message || err), "ERR");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
