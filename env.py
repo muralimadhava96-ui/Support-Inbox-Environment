@@ -80,26 +80,53 @@ class SupportEnv:
         )
 
     async def step(self, action: Action) -> StepResult:
+        if not self._state:
+            raise RuntimeError("Environment is not initialized. Call reset() first.")
+
         if self.done:
             raise RuntimeError("Episode is done. Call reset() to start a new one.")
 
+        if self._step_count >= self.MAX_STEPS:
+            self.done = True
+            return StepResult(
+                observation=self._build_observation(),
+                reward=0.0,
+                done=True,
+                info={"reason": "max_steps", "step": self._step_count, "status": self._state["status"]},
+            )
+
+        try:
+            action_type = action.action_type
+        except Exception:
+            malformed_delta = self._apply_reward_bounds(-0.1)
+            return StepResult(
+                observation=self._build_observation(),
+                reward=round(malformed_delta, 4),
+                done=False,
+                info={"error": "malformed_action", "step": self._step_count, "status": self._state["status"]},
+            )
+
         self._step_count += 1
         reward_delta = 0.0
-        info: dict[str, Any] = {"step": self._step_count, "action": action.action_type}
+        info: dict[str, Any] = {
+            "action": action_type,
+            "step": self._step_count,
+            "status": self._state["status"],
+        }
 
-        if action.action_type == "classify":
+        if action_type == "classify":
             reward_delta, feedback = self._handle_classify(action)
             info["feedback"] = feedback
 
-        elif action.action_type == "search_kb":
+        elif action_type == "search_kb":
             reward_delta, feedback = self._handle_search_kb()
             info["feedback"] = feedback
 
-        elif action.action_type == "respond":
+        elif action_type == "respond":
             reward_delta, feedback = self._handle_respond(action)
             info["feedback"] = feedback
 
-        elif action.action_type in {"resolve", "escalate"}:
+        elif action_type in {"resolve", "escalate"}:
             reward_delta, feedback = self._handle_terminal(action)
             info["feedback"] = feedback
 
@@ -115,6 +142,7 @@ class SupportEnv:
 
         bounded_delta = self._apply_reward_bounds(reward_delta)
 
+        info["status"] = self._state["status"]
         info["cumulative_reward"] = round(self._cumulative_reward, 4)
         info["final_score"] = grade(self._state) if self.done else None
 

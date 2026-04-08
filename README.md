@@ -179,6 +179,12 @@ Guarantees:
 - no extra fields
 - `END` is always emitted
 
+Failure modes handled:
+
+- premature resolution before response
+- missing knowledge lookup before response
+- repeated actions (redundant penalties)
+
 ## Hugging Face Spaces (Docker)
 
 1. Create a new Hugging Face Space with Docker SDK.
