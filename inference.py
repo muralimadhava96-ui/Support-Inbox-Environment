@@ -4,8 +4,15 @@ import argparse
 import asyncio
 import os
 
-import httpx
-from openai import OpenAI
+try:
+    import httpx
+except Exception:  # pragma: no cover - dependency may be intentionally absent in env-only runtimes
+    httpx = None
+
+try:
+    from openai import OpenAI
+except Exception:  # pragma: no cover - dependency may be intentionally absent in env-only runtimes
+    OpenAI = None
 
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
@@ -14,7 +21,7 @@ API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN", "")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 TEMPERATURE = 0.2
 
-LLM_CLIENT = OpenAI(api_key=API_KEY, base_url=API_BASE_URL) if API_KEY else None
+LLM_CLIENT = OpenAI(api_key=API_KEY, base_url=API_BASE_URL) if (API_KEY and OpenAI is not None) else None
 
 POLICY_KEYWORDS = {
     "ban",
@@ -221,6 +228,9 @@ async def _run_http(task: str) -> None:
     print(f"[START] task={task} env={ENV_BASE_URL} model={MODEL_NAME}")
 
     try:
+        if httpx is None:
+            raise RuntimeError("httpx_not_installed")
+
         async with httpx.AsyncClient(base_url=ENV_BASE_URL, timeout=30.0) as client:
             reset_response = await client.post("/reset", params={"task": task})
             reset_response.raise_for_status()
