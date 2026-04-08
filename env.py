@@ -179,12 +179,19 @@ class SupportEnv:
 
     def _handle_terminal(self, action: Action) -> tuple[float, str]:
         expected = self.task["expected_resolution"]
+        premature_resolve_penalty = 0.0
+
+        if action.action_type == "resolve" and not self._state["responded"]:
+            premature_resolve_penalty = -0.25
 
         if action.action_type == expected:
             self._state["resolved_correctly"] = True
             self._state["status"] = "escalated" if action.action_type == "escalate" else "resolved"
             self.done = True
-            return 0.30, "Correct terminal action. Episode complete."
+            reward = 0.30 + premature_resolve_penalty
+            if premature_resolve_penalty < 0:
+                return reward, "Correct terminal action, but resolve occurred before response."
+            return reward, "Correct terminal action. Episode complete."
 
         self.done = True
         return -0.15, "Incorrect terminal action. Episode complete with penalty."
