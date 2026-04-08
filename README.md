@@ -45,7 +45,7 @@ support-inbox-env/
 - `medium_billing`: double-charge billing dispute, expected terminal action `resolve`
 - `hard_escalation`: account-ban policy case, expected terminal action `escalate`
 
-All tasks are deterministic and support canonical score `1.0`.
+All tasks are deterministic and support canonical reward `1.0` on the optimal trajectory.
 
 ## Observation Schema
 
@@ -123,6 +123,8 @@ Canonical final score from `graders.py`:
 - `0.20` used KB
 - `0.20` responded
 - `0.30` resolved/escalated correctly
+- raw score is transformed to strict open interval `(0, 1)` for evaluator compatibility
+- perfect run maps to `0.999`, worst run maps to `0.001`
 
 ## API Endpoints
 
