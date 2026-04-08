@@ -59,6 +59,21 @@ All tasks are deterministic and support canonical score `1.0`.
 }
 ```
 
+Example observation:
+
+```json
+{
+  "ticket_id": "T-10042",
+  "customer_message": "User cannot login after password reset.",
+  "history": [],
+  "knowledge_base": [
+    "Password reset links expire after 15 minutes.",
+    "Two-factor lockouts require identity verification."
+  ],
+  "status": "open"
+}
+```
+
 ## Action Space
 
 ```json
@@ -184,6 +199,11 @@ Failure modes handled:
 - premature resolution before response
 - missing knowledge lookup before response
 - repeated actions (redundant penalties)
+
+## Example Episode
+
+- `classify` -> `search_kb` -> `respond` -> `resolve`
+- Typical cumulative reward: approximately `1.0` on an optimal path
 
 ## Hugging Face Spaces (Docker)
 
