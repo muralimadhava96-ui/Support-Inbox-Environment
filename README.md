@@ -168,7 +168,15 @@ Guarantees:
 ## Hugging Face Spaces (Docker)
 
 1. Create a new Hugging Face Space with Docker SDK.
-2. Push this repository.
+2. Push this repository to the Space git remote.
+
+```bash
+export HF_TOKEN=hf_xxx
+export HF_SPACE_ID=Madhava96/support-inbox-env
+./sync-hf-space.sh
+```
+
+If your Space tracks GitHub directly, ensure it points to the branch containing the latest validated commits.
 3. Space runs `uvicorn app:app --host 0.0.0.0 --port 7860`.
 4. For remote agent execution:
 
