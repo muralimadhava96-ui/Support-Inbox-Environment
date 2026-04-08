@@ -52,3 +52,39 @@ def test_reset_step_state_flow():
 def test_unknown_task_returns_400():
     bad_resp = client.post("/reset", params={"task": "does_not_exist"})
     assert bad_resp.status_code == 400
+
+
+def test_step_after_done_returns_safe_terminal_payload():
+    sid = "pytest-done-safe"
+    reset_resp = client.post("/reset", params={"task": "easy_faq", "session_id": sid})
+    assert reset_resp.status_code == 200
+
+    plan = [
+        {"action_type": "classify", "content": "faq"},
+        {"action_type": "search_kb", "content": None},
+        {
+            "action_type": "respond",
+            "content": (
+                "Thanks for reaching out. Refunds are accepted within 30 days with proof of purchase."
+            ),
+        },
+        {"action_type": "resolve", "content": None},
+    ]
+
+    last = None
+    for action in plan:
+        last = client.post("/step", params={"session_id": sid}, json=action)
+        assert last.status_code == 200
+    assert last is not None
+    assert last.json()["done"] is True
+
+    post_done = client.post(
+        "/step",
+        params={"session_id": sid},
+        json={"action_type": "resolve", "content": None},
+    )
+    assert post_done.status_code == 200
+    payload = post_done.json()
+    assert payload["done"] is True
+    assert payload["reward"] == 0.0
+    assert payload["info"]["reason"] == "episode_done"

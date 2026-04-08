@@ -173,9 +173,6 @@ async def step(action: Action, session_id: Optional[str] = "default"):
     if env is None:
         raise HTTPException(status_code=400, detail="No active session. Call /reset first.")
 
-    if env.done:
-        raise HTTPException(status_code=400, detail="Episode done. Call /reset to restart.")
-
     result = await env.step(action)
     return result.to_dict()
 

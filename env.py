@@ -84,7 +84,12 @@ class SupportEnv:
             raise RuntimeError("Environment is not initialized. Call reset() first.")
 
         if self.done:
-            raise RuntimeError("Episode is done. Call reset() to start a new one.")
+            return StepResult(
+                observation=self._build_observation(),
+                reward=0.0,
+                done=True,
+                info={"reason": "episode_done", "step": self._step_count, "status": self._state["status"]},
+            )
 
         if self._step_count >= self.MAX_STEPS:
             self.done = True
