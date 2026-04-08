@@ -123,29 +123,66 @@ def _fallback_response(observation: dict) -> str:
 
 
 def _llm_response(observation: dict) -> str:
-    if LLM_CLIENT is None:
-        return _fallback_response(observation)
-
     kb_text = "\n".join(f"- {line}" for line in observation.get("knowledge_base", []))
     user_prompt = (
         f"Customer message:\n{observation.get('customer_message', '')}\n\n"
         f"Knowledge base:\n{kb_text}"
     )
 
-    try:
-        response = LLM_CLIENT.chat.completions.create(
-            model=MODEL_NAME,
-            temperature=TEMPERATURE,
-            max_tokens=180,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt},
-            ],
-        )
-        text = (response.choices[0].message.content or "").strip()
-        return text if text else _fallback_response(observation)
-    except Exception:
-        return _fallback_response(observation)
+    if LLM_CLIENT is not None:
+        try:
+            response = LLM_CLIENT.chat.completions.create(
+                model=MODEL_NAME,
+                temperature=TEMPERATURE,
+                max_tokens=180,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            )
+            text = (response.choices[0].message.content or "").strip()
+            if text:
+                return text
+        except Exception:
+            pass
+
+    # Fallback path: still call evaluator proxy directly if OpenAI SDK is unavailable.
+    api_key = os.getenv("API_KEY")
+    api_base = os.getenv("API_BASE_URL")
+    if httpx is not None and api_key and api_base:
+        try:
+            payload = {
+                "model": MODEL_NAME,
+                "temperature": TEMPERATURE,
+                "max_tokens": 180,
+                "messages": [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt},
+                ],
+            }
+            with httpx.Client(timeout=30.0) as client:
+                resp = client.post(
+                    f"{api_base.rstrip('/')}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=payload,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                text = (
+                    data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                    .strip()
+                )
+                if text:
+                    return text
+        except Exception:
+            pass
+
+    return _fallback_response(observation)
 
 
 def _decide_next_action(observation: dict, cache: dict[str, str]) -> dict:
