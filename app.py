@@ -1,18 +1,21 @@
 """FastAPI app for Support Inbox Environment."""
 
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from env import SupportEnv
 from graders import grade_with_breakdown
-from models import Action
+from models import Action, Observation
 from tasks import TASKS
 
 
 env_registry: dict[str, SupportEnv] = {}
+ENV_NAME = "support-inbox-env"
+ENV_DESCRIPTION = "Customer support ticket-resolution environment."
+ENV_VERSION = "1.0.0"
 
 
 @asynccontextmanager
@@ -25,8 +28,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Support Inbox OpenEnv",
-    description="Customer support ticket-resolution environment.",
-    version="1.0.0",
+    description=ENV_DESCRIPTION,
+    version=ENV_VERSION,
     lifespan=lifespan,
 )
 
@@ -41,11 +44,88 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {
-        "name": "support-inbox-env",
-        "version": "1.0.0",
+        "name": ENV_NAME,
+        "version": ENV_VERSION,
         "tasks": list(TASKS.keys()),
         "endpoints": ["/reset", "/step", "/state"],
     }
+
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "name": ENV_NAME, "version": ENV_VERSION}
+
+
+@app.get("/metadata")
+async def metadata():
+    return {
+        "name": ENV_NAME,
+        "description": ENV_DESCRIPTION,
+        "version": ENV_VERSION,
+        "tasks": list(TASKS.keys()),
+        "reward": {"min": -1.0, "max": 1.0, "shaped": True},
+        "endpoints": {"reset": "POST /reset", "step": "POST /step", "state": "GET /state"},
+    }
+
+
+@app.get("/schema")
+async def schema():
+    state_schema = {
+        "type": "object",
+        "properties": {
+            "ticket_id": {"type": "string"},
+            "customer_message": {"type": "string"},
+            "history": {"type": "array", "items": {"type": "string"}},
+            "knowledge_base": {"type": "array", "items": {"type": "string"}},
+            "status": {"type": "string", "enum": ["open", "resolved", "escalated"]},
+            "task_type": {"type": "string"},
+            "expected_resolution": {"type": "string", "enum": ["resolve", "escalate"]},
+            "classified_correctly": {"type": "boolean"},
+            "used_kb": {"type": "boolean"},
+            "responded": {"type": "boolean"},
+            "response_bonus_awarded": {"type": "boolean"},
+            "resolved_correctly": {"type": "boolean"},
+            "has_classified": {"type": "boolean"},
+        },
+        "required": [
+            "ticket_id",
+            "customer_message",
+            "history",
+            "knowledge_base",
+            "status",
+            "task_type",
+            "expected_resolution",
+            "classified_correctly",
+            "used_kb",
+            "responded",
+            "response_bonus_awarded",
+            "resolved_correctly",
+            "has_classified",
+        ],
+    }
+    return {
+        "action": Action.model_json_schema(),
+        "observation": Observation.model_json_schema(),
+        "state": state_schema,
+    }
+
+
+@app.post("/mcp")
+async def mcp(payload: dict[str, Any]):
+    method = payload.get("method")
+    request_id = payload.get("id")
+
+    if method == "initialize":
+        result: dict[str, Any] = {
+            "capabilities": {},
+            "serverInfo": {"name": ENV_NAME, "version": ENV_VERSION},
+        }
+    elif method == "tools/list":
+        result = {"tools": []}
+    else:
+        result = {"ok": True}
+
+    return {"jsonrpc": "2.0", "id": request_id, "result": result}
 
 
 @app.get("/tasks")
