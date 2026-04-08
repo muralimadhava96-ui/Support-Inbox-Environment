@@ -177,8 +177,7 @@ Optional inference environment variables:
 - `API_BASE_URL` (default: `https://api.openai.com/v1`)
 - `MODEL_NAME` (default: `gpt-4o-mini`)
 - `ENV_BASE_URL` (default: `http://localhost:7860`)
-- `API_KEY` (primary, evaluator-injected)
-- `OPENAI_API_KEY` or `HF_TOKEN` (fallback only)
+- `API_KEY` (required for evaluator proxy calls)
 
 ## Strict Inference Logs
 
