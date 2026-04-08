@@ -13,6 +13,7 @@ pinned: false
 [![CI Template](https://github.com/muralimadhava96-ui/Support-Inbox-Environment/actions/workflows/validate.yml/badge.svg)](https://github.com/muralimadhava96-ui/Support-Inbox-Environment/actions/workflows/validate.yml)
 
 Support Inbox Environment is a production-ready OpenEnv environment that simulates a real customer support workflow. Agents must classify tickets, search the knowledge base, respond to users, and choose the correct terminal action (`resolve` or `escalate`).
+This environment simulates real L1 -> L2 support workflows used in production systems.
 
 Environment runtime does not require LLM APIs. Inference script does.
 
@@ -77,6 +78,17 @@ Dense reward components:
 - `+0.20` valid response
 - `+0.05` response length bonus (`len(content) > 20`)
 - `+0.30` correct terminal action
+
+| Action | Reward |
+|--------|--------|
+| Correct classify | +0.30 |
+| KB search | +0.20 |
+| Response | +0.20 |
+| Quality bonus | +0.05 |
+| Resolve/Escalate | +0.30 |
+| Wrong action | -0.15 |
+| Redundant action | -0.05 |
+| Premature resolve | -0.25 |
 
 Penalties:
 
@@ -148,6 +160,7 @@ Optional inference environment variables:
 - `API_BASE_URL` (default: `https://api.openai.com/v1`)
 - `MODEL_NAME` (default: `gpt-4o-mini`)
 - `ENV_BASE_URL` (default: `http://localhost:7860`)
+- `HF_TOKEN` (or `OPENAI_API_KEY`) for remote LLM calls in `inference.py`
 
 ## Strict Inference Logs
 

@@ -12,6 +12,7 @@ API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN", "")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
+TEMPERATURE = 0.2
 
 LLM_CLIENT = OpenAI(api_key=API_KEY, base_url=API_BASE_URL) if API_KEY else None
 
@@ -48,6 +49,15 @@ SYSTEM_PROMPT = (
 
 def _sanitize_error(exc: Exception) -> str:
     return str(exc).replace("\n", " ").strip() or "unknown_error"
+
+
+def _safe_reward(value: object) -> float:
+    if value is None:
+        return 0.0
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _keyword_classify(message: str) -> str:
@@ -108,7 +118,7 @@ def _llm_response(observation: dict) -> str:
     try:
         response = LLM_CLIENT.chat.completions.create(
             model=MODEL_NAME,
-            temperature=0.2,
+            temperature=TEMPERATURE,
             max_tokens=180,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
@@ -167,7 +177,7 @@ async def _run_local(task: str) -> None:
 
             try:
                 result = await env.step(Action(**action_dict))
-                reward = float(result.reward)
+                reward = _safe_reward(result.reward)
                 done = bool(result.done)
                 rewards.append(reward)
                 print(
@@ -226,7 +236,7 @@ async def _run_http(task: str) -> None:
                     step_response = await client.post("/step", json=action_dict)
                     step_response.raise_for_status()
                     result = step_response.json()
-                    reward = float(result.get("reward", 0.0))
+                    reward = _safe_reward(result.get("reward", 0.0))
                     done = bool(result.get("done", False))
                     rewards.append(reward)
                     print(
