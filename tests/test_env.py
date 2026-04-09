@@ -5,7 +5,7 @@ from graders import grade, grade_with_breakdown
 from models import Action
 
 
-def test_optimal_easy_faq_reaches_one():
+def test_optimal_easy_faq_stays_below_one():
     async def run():
         env = await SupportEnv.create("easy_faq")
         result = await env.reset()
@@ -31,7 +31,7 @@ def test_optimal_easy_faq_reaches_one():
                 break
 
         assert result.done is True
-        assert round(total, 4) == 1.0
+        assert round(total, 4) == 0.999
 
     asyncio.run(run())
 

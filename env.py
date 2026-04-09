@@ -9,7 +9,7 @@ from tasks import TASKS
 
 
 REWARD_MIN = -1.0
-REWARD_MAX = 1.0
+REWARD_MAX = 0.999
 QUALITY_THRESHOLD = 20
 
 

@@ -126,7 +126,7 @@ async def check_optimal():
         total += r.reward
         if r.done:
             break
-    assert round(total, 4) == 1.0, f'expected optimal total 1.0, got {total}'
+    assert round(total, 4) == 0.999, f'expected optimal total 0.999, got {total}'
 
 asyncio.run(check_optimal())
 print('reward_optimal=ok')
