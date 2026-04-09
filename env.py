@@ -11,6 +11,7 @@ from tasks import TASKS
 REWARD_MIN = -1.0
 REWARD_MAX = 0.999
 QUALITY_THRESHOLD = 20
+SCORE_EPS = 0.001
 
 
 class StepResult:
@@ -74,9 +75,9 @@ class SupportEnv:
 
         return StepResult(
             observation=self._build_observation(),
-            reward=0.0,
+            reward=SCORE_EPS,
             done=False,
-            info={"task": self.task_name, "step": 0},
+            info={"task": self.task_name, "step": 0, "task_score": grade(self._state)},
         )
 
     async def step(self, action: Action) -> StepResult:
@@ -86,18 +87,28 @@ class SupportEnv:
         if self.done:
             return StepResult(
                 observation=self._build_observation(),
-                reward=0.0,
+                reward=SCORE_EPS,
                 done=True,
-                info={"reason": "episode_done", "step": self._step_count, "status": self._state["status"]},
+                info={
+                    "reason": "episode_done",
+                    "step": self._step_count,
+                    "status": self._state["status"],
+                    "task_score": grade(self._state),
+                },
             )
 
         if self._step_count >= self.MAX_STEPS:
             self.done = True
             return StepResult(
                 observation=self._build_observation(),
-                reward=0.0,
+                reward=SCORE_EPS,
                 done=True,
-                info={"reason": "max_steps", "step": self._step_count, "status": self._state["status"]},
+                info={
+                    "reason": "max_steps",
+                    "step": self._step_count,
+                    "status": self._state["status"],
+                    "task_score": grade(self._state),
+                },
             )
 
         try:
@@ -149,7 +160,9 @@ class SupportEnv:
 
         info["status"] = self._state["status"]
         info["cumulative_reward"] = round(self._cumulative_reward, 4)
-        info["final_score"] = grade(self._state) if self.done else None
+        current_score = grade(self._state)
+        info["task_score"] = current_score
+        info["final_score"] = current_score
 
         return StepResult(
             observation=self._build_observation(),
@@ -162,6 +175,7 @@ class SupportEnv:
         snapshot = dict(self._state)
         snapshot["history"] = list(self._state.get("history", []))
         snapshot["knowledge_base"] = list(self._state.get("knowledge_base", []))
+        snapshot["score"] = grade(self._state)
         return snapshot
 
     async def close(self) -> None:

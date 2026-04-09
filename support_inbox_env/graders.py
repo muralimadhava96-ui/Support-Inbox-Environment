@@ -1,5 +1,6 @@
 """Deterministic graders for Support Inbox Environment."""
 
+import math
 from typing import Any
 
 
@@ -9,7 +10,20 @@ SCORE_MAX = 0.999
 
 def _clamp_score(score: float) -> float:
     """Map canonical scores into the strict open interval (0, 1)."""
-    return round(max(SCORE_MIN, min(score, SCORE_MAX)), 4)
+    try:
+        numeric = float(score)
+    except (TypeError, ValueError):
+        return SCORE_MIN
+
+    if not math.isfinite(numeric):
+        return SCORE_MIN
+
+    bounded = max(SCORE_MIN, min(numeric, SCORE_MAX))
+    if bounded <= 0.0:
+        return SCORE_MIN
+    if bounded >= 1.0:
+        return SCORE_MAX
+    return round(bounded, 6)
 
 
 def grade(state: dict[str, Any]) -> float:

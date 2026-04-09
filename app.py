@@ -194,6 +194,6 @@ async def get_score(session_id: Optional[str] = "default"):
     env = env_registry.get(sid)
 
     if env is None:
-        raise HTTPException(status_code=400, detail="No active session.")
+        return grade_with_breakdown({})
 
     return grade_with_breakdown(env.state())
