@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from env import SupportEnv
-from support_inbox_env.graders import grade
+from support_inbox_env.graders import GRADERS, grade
 from models import Action, Observation
 from tasks import TASKS
 
@@ -138,14 +138,42 @@ async def mcp(payload: dict[str, Any]):
 
 @app.get("/tasks")
 async def list_tasks():
-    return {
+    by_name = {
         name: {
             "type": task["type"],
             "description": task["description"],
             "expected_resolution": task["expected_resolution"],
+            "difficulty": {
+                "easy_faq": "easy",
+                "medium_billing": "medium",
+                "hard_escalation": "hard",
+            }.get(name, "unknown"),
+            "has_grader": name in GRADERS,
         }
         for name, task in TASKS.items()
     }
+
+    tasks_list = [{"id": name, **meta} for name, meta in by_name.items()]
+    return {"tasks": tasks_list, "by_name": by_name}
+
+
+@app.get("/validate")
+async def validate():
+    checks = {
+        "min_3_tasks": len(TASKS) >= 3,
+        "all_tasks_have_graders": all(name in GRADERS for name in TASKS),
+    }
+    task_scores = {name: float(grade(name, {})) for name in TASKS}
+    checks["task_scores_open_interval"] = all(0.0 < s < 1.0 for s in task_scores.values())
+    return {"valid": all(checks.values()), "checks": checks, "task_scores": task_scores}
+
+
+@app.get("/grade/{task_id}")
+async def grade_task(task_id: str, session_id: Optional[str] = "default"):
+    sid = session_id or "default"
+    env = env_registry.get(sid)
+    state = env.state() if env is not None else {}
+    return {"task_id": task_id, "score": grade(task_id, state)}
 
 
 @app.post("/reset")
