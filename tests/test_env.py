@@ -1,6 +1,7 @@
 import asyncio
 
 from env import SupportEnv
+from graders import grade, grade_with_breakdown
 from models import Action
 
 
@@ -62,3 +63,21 @@ def test_policy_ticket_wrong_terminal_action_penalized():
         assert round(result.reward, 4) == -0.15
 
     asyncio.run(run())
+
+
+def test_final_score_uses_strict_open_interval_bounds():
+    assert grade({}) == 0.001
+    assert grade(
+        {
+            "classified_correctly": True,
+            "used_kb": True,
+            "responded": True,
+            "resolved_correctly": True,
+        }
+    ) == 0.999
+
+
+def test_grade_breakdown_exposes_score_key():
+    result = grade_with_breakdown({})
+    assert result["score"] == 0.001
+    assert result["total"] == 0.001

@@ -4,34 +4,13 @@ import argparse
 import asyncio
 import os
 
-try:
-    import httpx
-except Exception:  # pragma: no cover - dependency may be intentionally absent in env-only runtimes
-    httpx = None
-
-try:
-    from openai import OpenAI
-except Exception:  # pragma: no cover - dependency may be intentionally absent in env-only runtimes
-    OpenAI = None
+import httpx
+from openai import AsyncOpenAI
 
 
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
-TEMPERATURE = 0.2
-
-
-def _build_llm_client():
-    if OpenAI is None:
-        return None
-    try:
-        api_key = os.environ["API_KEY"]
-        api_base = os.environ["API_BASE_URL"]
-    except KeyError:
-        return None
-    return OpenAI(api_key=api_key, base_url=api_base)
-
-
-LLM_CLIENT = _build_llm_client()
+LLM_CLIENT: AsyncOpenAI | None = None
 
 POLICY_KEYWORDS = {
     "ban",
@@ -66,15 +45,6 @@ SYSTEM_PROMPT = (
 
 def _sanitize_error(exc: Exception) -> str:
     return str(exc).replace("\n", " ").strip() or "unknown_error"
-
-
-def _safe_reward(value: object) -> float:
-    if value is None:
-        return 0.0
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 def _keyword_classify(message: str) -> str:
@@ -113,79 +83,46 @@ def _history_classification(history: list[str]) -> str | None:
     return None
 
 
-def _fallback_response(observation: dict) -> str:
-    kb = observation.get("knowledge_base", [])
-    first_kb = kb[0] if kb else "Please review our support policy page for next steps."
-    return (
-        "Thank you for reaching out. Based on our policy, "
-        f"{first_kb} If you share any additional details, we can help you right away."
-    )
+def _get_llm_client() -> AsyncOpenAI:
+    global LLM_CLIENT
+
+    if LLM_CLIENT is None:
+        api_key = os.getenv("API_KEY")
+        api_base_url = os.getenv("API_BASE_URL")
+        if not api_key or not api_base_url:
+            raise RuntimeError("Missing API_KEY or API_BASE_URL for LLM proxy")
+
+        LLM_CLIENT = AsyncOpenAI(
+            api_key=api_key,
+            base_url=api_base_url,
+        )
+
+    return LLM_CLIENT
 
 
-def _llm_response(observation: dict) -> str:
+async def _llm_response(observation: dict) -> str:
     kb_text = "\n".join(f"- {line}" for line in observation.get("knowledge_base", []))
     user_prompt = (
         f"Customer message:\n{observation.get('customer_message', '')}\n\n"
         f"Knowledge base:\n{kb_text}"
     )
 
-    if LLM_CLIENT is not None:
-        try:
-            response = LLM_CLIENT.chat.completions.create(
-                model=MODEL_NAME,
-                temperature=TEMPERATURE,
-                max_tokens=180,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_prompt},
-                ],
-            )
-            text = (response.choices[0].message.content or "").strip()
-            if text:
-                return text
-        except Exception:
-            pass
-
-    # Fallback path: still call evaluator proxy directly if OpenAI SDK is unavailable.
-    api_key = os.getenv("API_KEY")
-    api_base = os.getenv("API_BASE_URL")
-    if httpx is not None and api_key and api_base:
-        try:
-            payload = {
-                "model": MODEL_NAME,
-                "temperature": TEMPERATURE,
-                "max_tokens": 180,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_prompt},
-                ],
-            }
-            with httpx.Client(timeout=30.0) as client:
-                resp = client.post(
-                    f"{api_base.rstrip('/')}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json=payload,
-                )
-                resp.raise_for_status()
-                data = resp.json()
-                text = (
-                    data.get("choices", [{}])[0]
-                    .get("message", {})
-                    .get("content", "")
-                    .strip()
-                )
-                if text:
-                    return text
-        except Exception:
-            pass
-
-    return _fallback_response(observation)
+    response = await _get_llm_client().chat.completions.create(
+        model=MODEL_NAME,
+        temperature=0.2,
+        max_tokens=180,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+    )
+    text = (response.choices[0].message.content or "").strip()
+    if not text:
+        raise RuntimeError("empty_llm_response")
+    return text
 
 
-def _decide_next_action(observation: dict, cache: dict[str, str]) -> dict:
+async def _decide_next_action(observation: dict, cache: dict[str, str]) -> dict:
     history = observation.get("history", [])
     actions = _parse_history_actions(history)
 
@@ -198,7 +135,7 @@ def _decide_next_action(observation: dict, cache: dict[str, str]) -> dict:
         return {"action_type": "search_kb", "content": None}
 
     if "respond" not in actions:
-        return {"action_type": "respond", "content": _llm_response(observation)}
+        return {"action_type": "respond", "content": await _llm_response(observation)}
 
     ticket_type = cache.get("ticket_type") or _history_classification(history) or "faq"
     if ticket_type == "policy":
@@ -223,15 +160,15 @@ async def _run_local(task: str) -> None:
         env = await SupportEnv.create(task)
         result = await env.reset()
         step = 0
+        action_name = "unknown"
 
         while not result.done:
-            action_dict = _decide_next_action(result.observation.model_dump(), cache)
-            action_name = action_dict["action_type"]
-            step += 1
-
             try:
+                action_dict = await _decide_next_action(result.observation.model_dump(), cache)
+                action_name = action_dict["action_type"]
+                step += 1
                 result = await env.step(Action(**action_dict))
-                reward = _safe_reward(result.reward)
+                reward = float(result.reward)
                 done = bool(result.done)
                 rewards.append(reward)
                 print(
@@ -275,25 +212,30 @@ async def _run_http(task: str) -> None:
     print(f"[START] task={task} env={ENV_BASE_URL} model={MODEL_NAME}")
 
     try:
-        if httpx is None:
-            raise RuntimeError("httpx_not_installed")
-
         async with httpx.AsyncClient(base_url=ENV_BASE_URL, timeout=30.0) as client:
-            reset_response = await client.post("/reset", params={"task": task})
-            reset_response.raise_for_status()
-            result = reset_response.json()
+            for attempt in range(2):
+                try:
+                    reset_response = await client.post("/reset", params={"task": task})
+                    reset_response.raise_for_status()
+                    result = reset_response.json()
+                    break
+                except Exception:
+                    if attempt == 1:
+                        raise
+                    await asyncio.sleep(1)
+
             step = 0
+            action_name = "unknown"
 
             while not result.get("done", False):
-                action_dict = _decide_next_action(result["observation"], cache)
-                action_name = action_dict["action_type"]
-                step += 1
-
                 try:
+                    action_dict = await _decide_next_action(result["observation"], cache)
+                    action_name = action_dict["action_type"]
+                    step += 1
                     step_response = await client.post("/step", json=action_dict)
                     step_response.raise_for_status()
                     result = step_response.json()
-                    reward = _safe_reward(result.get("reward", 0.0))
+                    reward = float(result.get("reward", 0.0))
                     done = bool(result.get("done", False))
                     rewards.append(reward)
                     print(
