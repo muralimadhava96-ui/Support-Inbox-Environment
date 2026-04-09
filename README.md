@@ -1,9 +1,16 @@
+---
+title: Support Inbox Environment
+emoji: 📬
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # Support Inbox Environment
 
 [![OpenEnv Validate](https://img.shields.io/badge/OpenEnv-validate%20passing-brightgreen)](https://github.com/meta-pytorch/OpenEnv)
-[![CI Template](https://github.com/OWNER/REPO/actions/workflows/validate.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/validate.yml)
-
-Note: replace `OWNER/REPO` in the CI badge URL with your actual GitHub repository path.
+[![CI Template](https://github.com/muralimadhava96-ui/Support-Inbox-Environment/actions/workflows/validate.yml/badge.svg)](https://github.com/muralimadhava96-ui/Support-Inbox-Environment/actions/workflows/validate.yml)
 
 Support Inbox Environment is a production-ready OpenEnv environment that simulates a real customer support workflow. Agents must classify tickets, search the knowledge base, respond to users, and choose the correct terminal action (`resolve` or `escalate`).
 
