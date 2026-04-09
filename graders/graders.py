@@ -1,0 +1,5 @@
+"""Package-style grader module for scaffold/validator compatibility."""
+
+from support_inbox_env.graders import GRADERS, grade, grade_with_breakdown
+
+__all__ = ["grade", "grade_with_breakdown", "GRADERS"]

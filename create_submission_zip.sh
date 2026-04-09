@@ -13,6 +13,7 @@ echo "Running verification before packaging..."
 echo "Creating ${OUT}"
 zip -r "$OUT" \
   app.py env.py models.py tasks.py graders.py grader.py \
+  graders \
   support_inbox_env \
   openenv.yaml requirements.txt requirements-inference.txt \
   Dockerfile inference.py README.md \

@@ -75,22 +75,29 @@ def grade_with_breakdown(*args: Any, **kwargs: Any) -> dict[str, Any]:
         + (0.30 if criteria["resolution"] else 0.0)
     )
     score = _clamp_score(raw_score)
-    breakdown = {name: ("pass" if passed else "fail") for name, passed in criteria.items()}
+    # Keep breakdown numeric and strictly inside (0,1) to satisfy strict validators
+    # that inspect all numeric fields, not just the top-level score.
+    breakdown = {
+        "classification": 0.30 if criteria["classification"] else SCORE_MIN,
+        "kb_usage": 0.20 if criteria["kb_usage"] else SCORE_MIN,
+        "response": 0.20 if criteria["response"] else SCORE_MIN,
+        "resolution": 0.30 if criteria["resolution"] else SCORE_MIN,
+    }
     payload = {"score": score, "total": score, "breakdown": breakdown}
     if task_id is not None:
         payload["task_id"] = task_id
     return payload
 
 
-def grade_easy_faq(state: dict[str, Any]) -> float:
+def grade_easy_faq(state: dict[str, Any] | None = None) -> float:
     return grade("easy_faq", state)
 
 
-def grade_medium_billing(state: dict[str, Any]) -> float:
+def grade_medium_billing(state: dict[str, Any] | None = None) -> float:
     return grade("medium_billing", state)
 
 
-def grade_hard_escalation(state: dict[str, Any]) -> float:
+def grade_hard_escalation(state: dict[str, Any] | None = None) -> float:
     return grade("hard_escalation", state)
 
 
