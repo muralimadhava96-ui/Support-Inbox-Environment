@@ -43,4 +43,3 @@ def test_score_endpoint_exposes_score_key():
     assert score_resp.status_code == 200
     payload = score_resp.json()
     assert payload["score"] == 0.01
-    assert payload["total"] == 0.01

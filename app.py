@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from env import SupportEnv
-from support_inbox_env.graders import grade_with_breakdown
+from support_inbox_env.graders import grade
 from models import Action, Observation
 from tasks import TASKS
 
@@ -194,6 +194,6 @@ async def get_score(session_id: Optional[str] = "default"):
     env = env_registry.get(sid)
 
     if env is None:
-        return grade_with_breakdown({})
+        return {"score": grade({})}
 
-    return grade_with_breakdown(env.state())
+    return {"score": grade(env.state())}
