@@ -11,6 +11,7 @@ from openai import AsyncOpenAI
 MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 LLM_CLIENT: AsyncOpenAI | None = None
+MIN_STRICT_REWARD = 0.01
 
 POLICY_KEYWORDS = {
     "ban",
@@ -176,10 +177,10 @@ async def _run_local(task: str) -> None:
                     f"reward={reward:.2f} done={str(done).lower()} error=null"
                 )
             except Exception as exc:
-                rewards.append(0.0)
+                rewards.append(MIN_STRICT_REWARD)
                 print(
                     f"[STEP] step={step} action={action_name} "
-                    f"reward=0.00 done=false error={_sanitize_error(exc)}"
+                    f"reward={MIN_STRICT_REWARD:.2f} done=false error={_sanitize_error(exc)}"
                 )
                 break
 
@@ -191,9 +192,15 @@ async def _run_local(task: str) -> None:
             success = bool(result.done and state.get("resolved_correctly"))
 
     except Exception as exc:
-        print(f"[STEP] step=0 action=null reward=0.00 done=false error={_sanitize_error(exc)}")
+        rewards.append(MIN_STRICT_REWARD)
+        print(
+            f"[STEP] step=0 action=null reward={MIN_STRICT_REWARD:.2f} "
+            f"done=false error={_sanitize_error(exc)}"
+        )
 
     finally:
+        if not rewards:
+            rewards.append(MIN_STRICT_REWARD)
         if env is not None:
             try:
                 await env.close()
@@ -243,10 +250,10 @@ async def _run_http(task: str) -> None:
                         f"reward={reward:.2f} done={str(done).lower()} error=null"
                     )
                 except Exception as exc:
-                    rewards.append(0.0)
+                    rewards.append(MIN_STRICT_REWARD)
                     print(
                         f"[STEP] step={step} action={action_name} "
-                        f"reward=0.00 done=false error={_sanitize_error(exc)}"
+                        f"reward={MIN_STRICT_REWARD:.2f} done=false error={_sanitize_error(exc)}"
                     )
                     break
 
@@ -264,9 +271,15 @@ async def _run_http(task: str) -> None:
                     success = False
 
     except Exception as exc:
-        print(f"[STEP] step=0 action=null reward=0.00 done=false error={_sanitize_error(exc)}")
+        rewards.append(MIN_STRICT_REWARD)
+        print(
+            f"[STEP] step=0 action=null reward={MIN_STRICT_REWARD:.2f} "
+            f"done=false error={_sanitize_error(exc)}"
+        )
 
     finally:
+        if not rewards:
+            rewards.append(MIN_STRICT_REWARD)
         reward_csv = ",".join(f"{value:.2f}" for value in rewards)
         print(f"[END] success={str(success).lower()} steps={len(rewards)} rewards={reward_csv}")
 
