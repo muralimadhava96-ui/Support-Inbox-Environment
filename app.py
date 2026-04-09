@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from env import SupportEnv
-from graders import grade_with_breakdown
+from support_inbox_env.graders import grade_with_breakdown
 from models import Action, Observation
 from tasks import TASKS
 

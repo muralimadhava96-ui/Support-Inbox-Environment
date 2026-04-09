@@ -1,4 +1,10 @@
+spec_version: 1
 name: support-inbox-env
+type: space
+runtime: fastapi
+app: server.app:app
+port: 7860
+
 description: >
   A customer support ticket-resolution OpenEnv environment.
   The agent must classify tickets, search the knowledge base,

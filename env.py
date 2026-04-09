@@ -3,7 +3,7 @@
 import uuid
 from typing import Any
 
-from graders import grade
+from support_inbox_env.graders import grade
 from models import Action, Observation
 from tasks import TASKS
 
