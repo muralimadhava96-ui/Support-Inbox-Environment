@@ -71,7 +71,7 @@ async def metadata():
         "description": ENV_DESCRIPTION,
         "version": ENV_VERSION,
         "tasks": list(TASKS.keys()),
-        "reward": {"min": -1.0, "max": 0.999, "shaped": True},
+        "reward": {"min": -1.0, "max": 0.99, "shaped": True},
         "endpoints": {"reset": "POST /reset", "step": "POST /step", "state": "GET /state"},
     }
 

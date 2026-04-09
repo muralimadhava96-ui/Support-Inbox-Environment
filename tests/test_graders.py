@@ -15,7 +15,7 @@ def test_grade_is_strictly_open_interval_for_perfect_state():
     }
     score = grade(state)
     assert 0.0 < score < 1.0
-    assert score == 0.999
+    assert score == 0.99
 
 
 def test_grade_with_breakdown_total_is_strictly_open_interval():

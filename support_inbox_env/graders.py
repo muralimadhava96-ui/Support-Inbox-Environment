@@ -4,8 +4,8 @@ import math
 from typing import Any
 
 
-SCORE_MIN = 0.001
-SCORE_MAX = 0.999
+SCORE_MIN = 0.01
+SCORE_MAX = 0.99
 
 
 def _clamp_score(score: float) -> float:

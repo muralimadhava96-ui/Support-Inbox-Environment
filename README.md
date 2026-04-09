@@ -44,7 +44,7 @@ support-inbox-env/
 - `medium_billing`: double-charge billing dispute, expected terminal action `resolve`
 - `hard_escalation`: account-ban policy case, expected terminal action `escalate`
 
-All tasks are deterministic and support optimal cumulative reward `0.999`.
+All tasks are deterministic and support optimal cumulative reward `0.99`.
 
 ## Observation Schema
 
@@ -85,9 +85,9 @@ Penalties:
 
 Bounds and optimality:
 
-- cumulative reward is clamped to `[-1.0, 0.999]` every step
+- cumulative reward is clamped to `[-1.0, 0.99]` every step
 - manifest bounds match runtime bounds
-- optimal trajectory reaches exactly `0.999` cumulative reward
+- optimal trajectory reaches exactly `0.99` cumulative reward
 
 Canonical final score from `graders.py`:
 
@@ -96,8 +96,8 @@ Canonical final score from `graders.py`:
 - `0.20` responded
 - `0.30` resolved/escalated correctly
 - raw score is transformed to the strict open interval `(0, 1)`
-- worst-case score is reported as `0.001`
-- perfect score is reported as `0.999`
+- worst-case score is reported as `0.01`
+- perfect score is reported as `0.99`
 
 ## API Endpoints
 

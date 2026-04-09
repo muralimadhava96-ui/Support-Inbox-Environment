@@ -5,7 +5,7 @@ from graders import grade, grade_with_breakdown
 from models import Action
 
 
-def test_optimal_easy_faq_stays_below_one():
+def test_optimal_easy_faq_stays_well_below_one():
     async def run():
         env = await SupportEnv.create("easy_faq")
         result = await env.reset()
@@ -31,7 +31,7 @@ def test_optimal_easy_faq_stays_below_one():
                 break
 
         assert result.done is True
-        assert round(total, 4) == 0.999
+        assert round(total, 4) == 0.99
 
     asyncio.run(run())
 
@@ -66,7 +66,7 @@ def test_policy_ticket_wrong_terminal_action_penalized():
 
 
 def test_final_score_uses_strict_open_interval_bounds():
-    assert grade({}) == 0.001
+    assert grade({}) == 0.01
     assert grade(
         {
             "classified_correctly": True,
@@ -74,10 +74,10 @@ def test_final_score_uses_strict_open_interval_bounds():
             "responded": True,
             "resolved_correctly": True,
         }
-    ) == 0.999
+    ) == 0.99
 
 
 def test_grade_breakdown_exposes_score_key():
     result = grade_with_breakdown({})
-    assert result["score"] == 0.001
-    assert result["total"] == 0.001
+    assert result["score"] == 0.01
+    assert result["total"] == 0.01

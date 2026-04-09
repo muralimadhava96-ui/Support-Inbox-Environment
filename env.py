@@ -9,9 +9,9 @@ from tasks import TASKS
 
 
 REWARD_MIN = -1.0
-REWARD_MAX = 0.999
+REWARD_MAX = 0.99
 QUALITY_THRESHOLD = 20
-SCORE_EPS = 0.001
+SCORE_EPS = 0.01
 
 
 class StepResult:

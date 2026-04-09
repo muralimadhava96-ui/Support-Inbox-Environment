@@ -23,5 +23,5 @@ class Action(BaseModel):
 class Reward(BaseModel):
     """Structured reward metadata."""
 
-    value: float = Field(..., ge=-1.0, le=0.999)
+    value: float = Field(..., ge=-1.0, le=0.99)
     reason: str

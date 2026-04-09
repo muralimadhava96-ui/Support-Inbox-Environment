@@ -42,5 +42,5 @@ def test_score_endpoint_exposes_score_key():
     score_resp = client.get("/score", params={"session_id": session_id})
     assert score_resp.status_code == 200
     payload = score_resp.json()
-    assert payload["score"] == 0.001
-    assert payload["total"] == 0.001
+    assert payload["score"] == 0.01
+    assert payload["total"] == 0.01
