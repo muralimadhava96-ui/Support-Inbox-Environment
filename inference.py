@@ -12,6 +12,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 LLM_CLIENT: AsyncOpenAI | None = None
 MIN_STRICT_REWARD = 0.01
+MAX_STRICT_SCORE = 0.99
 
 POLICY_KEYWORDS = {
     "ban",
@@ -46,6 +47,14 @@ SYSTEM_PROMPT = (
 
 def _sanitize_error(exc: Exception) -> str:
     return str(exc).replace("\n", " ").strip() or "unknown_error"
+
+
+def _strict_score(value: float | int | None) -> float:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        numeric = MIN_STRICT_REWARD
+    return max(MIN_STRICT_REWARD, min(MAX_STRICT_SCORE, numeric))
 
 
 def _keyword_classify(message: str) -> str:
@@ -148,10 +157,12 @@ async def _decide_next_action(observation: dict, cache: dict[str, str]) -> dict:
 async def _run_local(task: str) -> None:
     from env import SupportEnv
     from models import Action
+    from support_inbox_env.graders import grade
 
     rewards: list[float] = []
     cache: dict[str, str] = {}
     success = False
+    final_score = MIN_STRICT_REWARD
     env = None
     result = None
 
@@ -190,6 +201,7 @@ async def _run_local(task: str) -> None:
         if env is not None and result is not None:
             state = env.state()
             success = bool(result.done and state.get("resolved_correctly"))
+            final_score = _strict_score(grade(task, state))
 
     except Exception as exc:
         rewards.append(MIN_STRICT_REWARD)
@@ -208,13 +220,17 @@ async def _run_local(task: str) -> None:
                 pass
 
         reward_csv = ",".join(f"{value:.2f}" for value in rewards)
-        print(f"[END] success={str(success).lower()} steps={len(rewards)} rewards={reward_csv}")
+        print(
+            f"[END] success={str(success).lower()} steps={len(rewards)} "
+            f"score={final_score:.2f} rewards={reward_csv}"
+        )
 
 
 async def _run_http(task: str) -> None:
     rewards: list[float] = []
     cache: dict[str, str] = {}
     success = False
+    final_score = MIN_STRICT_REWARD
 
     print(f"[START] task={task} env={ENV_BASE_URL} model={MODEL_NAME}")
 
@@ -270,6 +286,18 @@ async def _run_http(task: str) -> None:
                 except Exception:
                     success = False
 
+            try:
+                score_resp = await client.get("/score")
+                score_resp.raise_for_status()
+                score_payload = score_resp.json()
+                if isinstance(score_payload, dict):
+                    raw_score = score_payload.get("score", score_payload.get("total"))
+                else:
+                    raw_score = score_payload
+                final_score = _strict_score(raw_score)
+            except Exception:
+                final_score = _strict_score(sum(rewards))
+
     except Exception as exc:
         rewards.append(MIN_STRICT_REWARD)
         print(
@@ -281,7 +309,10 @@ async def _run_http(task: str) -> None:
         if not rewards:
             rewards.append(MIN_STRICT_REWARD)
         reward_csv = ",".join(f"{value:.2f}" for value in rewards)
-        print(f"[END] success={str(success).lower()} steps={len(rewards)} rewards={reward_csv}")
+        print(
+            f"[END] success={str(success).lower()} steps={len(rewards)} "
+            f"score={final_score:.2f} rewards={reward_csv}"
+        )
 
 
 async def main() -> None:

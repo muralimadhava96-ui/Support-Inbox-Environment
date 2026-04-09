@@ -81,8 +81,8 @@ assert lines, 'inference produced no output'
 
 pat_start = re.compile(r'^\[START\] task=\S+ env=\S+ model=\S+$')
 pat_step = re.compile(r'^\[STEP\] step=\d+ action=\S+ reward=-?\d+\.\d{2} done=(true|false) error=(null|.+)$')
-pat_end = re.compile(r'^\[END\] success=(true|false) steps=\d+ rewards=.*$')
-pat_success = re.compile(r'^\[END\] success=true steps=\d+ rewards=.*$')
+pat_end = re.compile(r'^\[END\] success=(true|false) steps=\d+ score=\d+\.\d{2} rewards=.*$')
+pat_success = re.compile(r'^\[END\] success=true steps=\d+ score=\d+\.\d{2} rewards=.*$')
 
 assert pat_start.match(lines[0]), f'invalid START line: {lines[0]}'
 assert pat_end.match(lines[-1]), f'invalid END line: {lines[-1]}'
@@ -91,6 +91,8 @@ for ln in lines[1:-1]:
     assert pat_step.match(ln), f'invalid STEP line: {ln}'
     reward = float(re.search(r'reward=(-?\d+\.\d{2})', ln).group(1))
     assert 0.0 < reward < 1.0, f'reward out of strict bounds: {ln}'
+end_score = float(re.search(r'score=(\d+\.\d{2})', lines[-1]).group(1))
+assert 0.0 < end_score < 1.0, f'end score out of strict bounds: {lines[-1]}'
 
 print('inference_format=ok')
 PY
